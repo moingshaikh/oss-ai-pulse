@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSS AI Pulse — Open Source AI Intelligence Dashboard</title>
+<meta name="description" content="Live intelligence dashboard tracking GitHub, Hacker News, Reddit and Product Hunt for open source AI builders and community managers.">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #080a0c;
+  --s1:       #0f1214;
+  --s2:       #161b1f;
+  --s3:       #1e252b;
+  --s4:       #262f37;
+  --b0:       rgba(255,255,255,0.04);
+  --b1:       rgba(255,255,255,0.08);
+  --b2:       rgba(255,255,255,0.13);
+  --b3:       rgba(255,255,255,0.22);
+  --tx:       #cdd5de;
+  --tx2:      #7f8e9c;
+  --tx3:      #4d5c6a;
+  --green:    #2dffb2;
+  --green2:   rgba(45,255,178,0.12);
+  --orange:   #ff7340;
+  --orange2:  rgba(255,115,64,0.12);
+  --red:      #ff4040;
+  --blue:     #4db8ff;
+  --yellow:   #ffd166;
+  --purple:   #b69dff;
+  --font-m:   'IBM Plex Mono', monospace;
+  --font-d:   'Instrument Serif', serif;
+  --r:        6px;
+  --r2:       10px;
+}
+
+[data-theme="light"] {
+  --bg:       #f5f5f0;
+  --s1:       #eeeee8;
+  --s2:       #e4e4dc;
+  --s3:       #d8d8ce;
+  --s4:       #ccccbf;
+  --b0:       rgba(0,0,0,0.04);
+  --b1:       rgba(0,0,0,0.08);
+  --b2:       rgba(0,0,0,0.13);
+  --b3:       rgba(0,0,0,0.22);
+  --tx:       #1a2028;
+  --tx2:      #4a5666;
+  --tx3:      #8a96a4;
+  --green:    #00875a;
+  --green2:   rgba(0,135,90,0.10);
+  --orange:   #c45200;
+  --orange2:  rgba(196,82,0,0.10);
+  --red:      #cc1f1f;
+  --blue:     #1565c0;
+  --yellow:   #8a6400;
+  --purple:   #6040c0;
+}
+
+/* smooth transitions on theme switch */
+body, .topbar, .tag-row, .stats-row, .col-head, .syn-row, .col,
+.item, .badge, .btn, .filter-wrap, .skel, .pill, .connect-card,
+.key-inp, .err-bar, .feed-msg, .toast {
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+
+/* light theme: primary btn text must stay dark */
+[data-theme="light"] .btn.primary { color: #f5f5f0; }
+[data-theme="light"] .key-btn { color: #f5f5f0; }
+
+/* light theme: skeleton shimmer */
+[data-theme="light"] .skel { background: var(--s3); }
+
+/* light theme: sparkline slightly darker */
+[data-theme="light"] svg.spark polyline { opacity: 1; }
+
+/* ── THEME TOGGLE SWITCH ── */
+.theme-switch {
+  display: flex; align-items: center;
+  background: #2a3a4a; border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 20px; padding: 3px;
+  cursor: pointer; flex-shrink: 0;
+  width: 56px; height: 28px;
+  position: relative; transition: background .2s, border-color .2s;
+  margin-left: 4px;
+}
+.theme-switch:hover { border-color: rgba(255,255,255,0.32); }
+
+.ts-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  border: 1px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1;
+  transition: transform .22s cubic-bezier(.4,0,.2,1), background .2s;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,.5);
+  color: #1a2840;
+}
+
+/* static icons in the track */
+.ts-icon-sun  { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); font-size: 11px; opacity: .55; pointer-events: none; transition: opacity .2s; color: #ffd166; }
+.ts-icon-moon { position: absolute; left: 7px;  top: 50%; transform: translateY(-50%); font-size: 11px; opacity: 0;  pointer-events: none; transition: opacity .2s; color: #4a6fa5; }
+
+/* light mode state */
+[data-theme="light"] .theme-switch { background: #c8d8f0; border-color: rgba(0,0,0,.18); }
+[data-theme="light"] .theme-switch:hover { border-color: rgba(0,0,0,.3); }
+[data-theme="light"] .ts-thumb { transform: translateX(28px); background: #fff; border-color: rgba(0,0,0,.15); color: #c45200; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+[data-theme="light"] .ts-icon-sun  { opacity: 0; }
+[data-theme="light"] .ts-icon-moon { opacity: .6; }
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--font-m);
+  font-size: 12px;
+  line-height: 1.55;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+
+/* ── LAYOUT ── */
+.shell { display: flex; flex-direction: column; height: 100vh; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex; align-items: center; gap: 0;
+  height: 48px; flex-shrink: 0;
+  border-bottom: 1px solid var(--b1);
+  padding: 0 20px;
+  background: var(--s1);
+}
+.logo {
+  font-family: var(--font-d);
+  font-size: 19px;
+  color: var(--green);
+  letter-spacing: -0.01em;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+.logo em { color: var(--tx2); font-style: italic; }
+
+.filter-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: var(--s2);
+  border: 1px solid var(--b1);
+  border-radius: var(--r);
+  padding: 0 12px;
+  gap: 8px;
+  height: 32px;
+  max-width: 480px;
+  transition: border-color .15s;
+}
+.filter-wrap:focus-within { border-color: var(--green); }
+.filter-icon { color: var(--tx3); font-size: 12px; flex-shrink: 0; }
+.filter-input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--tx); font-family: var(--font-m); font-size: 12px;
+}
+.filter-input::placeholder { color: var(--tx3); }
+.filter-clear {
+  background: none; border: none; color: var(--tx3); cursor: pointer;
+  font-size: 14px; padding: 0 2px; line-height: 1; display: none;
+}
+.filter-clear.visible { display: block; }
+.filter-clear:hover { color: var(--tx); }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: 16px; }
+
+.btn {
+  font-family: var(--font-m); font-size: 11px;
+  background: none; border: 1px solid var(--b2);
+  color: var(--tx2); padding: 5px 12px; border-radius: var(--r);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+}
+.btn:hover { color: var(--tx); border-color: var(--b3); background: var(--s2); }
+.btn.primary { background: var(--green); color: #080a0c; border-color: transparent; font-weight: 600; }
+.btn.primary:hover { background: #5fffca; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.live-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--tx3); letter-spacing: 0.07em;
+  flex-shrink: 0; margin-left: 4px;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2.4s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.75)} }
+
+/* ── FILTER TAGS ── */
+.tag-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 20px;
+  border-bottom: 1px solid var(--b1);
+  background: var(--s1);
+  overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+}
+.tag-row::-webkit-scrollbar { display: none; }
+.tag-label { font-size: 10px; color: var(--tx3); letter-spacing: 0.06em; white-space: nowrap; margin-right: 2px; }
+.ftag {
+  font-family: var(--font-m); font-size: 10px;
+  background: var(--s3); border: 1px solid var(--b1);
+  color: var(--tx2); padding: 3px 10px; border-radius: 20px;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ftag:hover { border-color: var(--green); color: var(--green); }
+.ftag.active { background: var(--green2); border-color: var(--green); color: var(--green); }
+
+/* ── MAIN GRID ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr 188px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── COLUMNS ── */
+.col {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--b1);
+  overflow: hidden; min-height: 0;
+}
+.col:last-of-type { border-right: none; }
+
+.col-head {
+  padding: 11px 14px 9px;
+  border-bottom: 1px solid var(--b1);
+  background: var(--s1);
+  flex-shrink: 0;
+}
+.col-head-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.col-name {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.col-icon { font-size: 14px; line-height: 1; }
+.badge {
+  font-size: 9px; background: var(--s3); color: var(--tx3);
+  border: 1px solid var(--b1); border-radius: 10px; padding: 1px 7px;
+  font-weight: 400;
+}
+.col-sub { font-size: 10px; color: var(--tx3); }
+
+.col-gh .col-name { color: var(--tx); }
+.col-hn .col-name { color: var(--orange); }
+.col-rd .col-name { color: #ff5700; }
+.col-ph .col-name { color: var(--yellow); }
+
+.col-body { flex: 1; overflow-y: auto; min-height: 0; }
+
+/* ── ITEMS ── */
+.item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--b0);
+  transition: background .1s;
+  position: relative;
+}
+.item:hover { background: var(--s2); }
+.item.hidden { display: none; }
+
+.item-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+.item-rank { font-size: 10px; color: var(--tx3); flex-shrink: 0; margin-top: 1px; min-width: 16px; }
+.item-title {
+  font-size: 12px; color: var(--tx); line-height: 1.45;
+  font-weight: 500;
+}
+.item-title a { color: inherit; text-decoration: none; }
+.item-title a:hover { color: var(--green); }
+
+.item-desc {
+  font-size: 11px; color: var(--tx2); line-height: 1.5;
+  margin: 3px 0 5px 24px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.item-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-left: 24px; }
+.chip { font-size: 10px; color: var(--tx2); display: flex; align-items: center; gap: 3px; }
+.chip.g { color: var(--yellow); }
+.chip.s { color: var(--orange); }
+.chip.u { color: #ff5700; }
+.chip.v { color: var(--yellow); }
+.chip.b { color: var(--blue); }
+
+.pill {
+  font-size: 9px; border-radius: 3px; padding: 1px 6px;
+  background: var(--s3); color: var(--tx3); border: 1px solid var(--b1);
+}
+.pill.green { background: rgba(45,255,178,0.07); color: #2dffb2aa; border-color: rgba(45,255,178,0.15); }
+.pill.orange { background: rgba(255,115,64,0.08); color: var(--orange); border-color: rgba(255,115,64,0.18); }
+
+/* ── SPARKLINE ── */
+.sparkline-wrap { margin: 4px 0 0 24px; }
+.sparkline-label { font-size: 9px; color: var(--tx3); margin-bottom: 2px; }
+svg.spark { display: block; overflow: visible; }
+
+/* ── LANG DOT ── */
+.ldot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+/* ── LOADING ── */
+.skel-wrap { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
+.skel { background: var(--s2); border-radius: 4px; animation: sk 1.6s ease-in-out infinite; }
+@keyframes sk { 0%,100%{opacity:.3} 50%{opacity:.7} }
+
+/* ── EMPTY / ERROR ── */
+.feed-msg {
+  padding: 28px 16px; text-align: center; color: var(--tx3);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.feed-msg-icon { font-size: 22px; opacity: .3; }
+.feed-msg-title { font-size: 12px; color: var(--tx2); }
+.feed-msg-sub { font-size: 11px; line-height: 1.6; max-width: 200px; }
+.feed-msg a { color: var(--blue); text-decoration: none; }
+.feed-msg a:hover { text-decoration: underline; }
+.err-bar {
+  margin: 10px 12px; padding: 10px 12px; border-radius: var(--r);
+  background: var(--s2); border-left: 2px solid var(--red);
+  font-size: 11px; color: var(--tx2); line-height: 1.6;
+}
+
+/* ── PH CONNECT ── */
+.connect-card {
+  margin: 12px; padding: 14px; border-radius: var(--r2);
+  background: var(--s2); border: 1px solid var(--b2);
+}
+.connect-card h4 { font-size: 12px; color: var(--tx); margin-bottom: 5px; font-weight: 600; }
+.connect-card p { font-size: 11px; color: var(--tx2); line-height: 1.65; margin-bottom: 10px; }
+.connect-card a { color: var(--blue); text-decoration: none; }
+.connect-card a:hover { text-decoration: underline; }
+.key-row { display: flex; gap: 6px; }
+.key-inp {
+  flex: 1; background: var(--s1); border: 1px solid var(--b2);
+  color: var(--tx); font-family: var(--font-m); font-size: 11px;
+  padding: 6px 10px; border-radius: var(--r); outline: none;
+}
+.key-inp:focus { border-color: var(--green); }
+.key-btn {
+  background: var(--green); color: #080a0c; border: none;
+  font-family: var(--font-m); font-size: 11px; font-weight: 600;
+  padding: 6px 14px; border-radius: var(--r); cursor: pointer;
+}
+.key-btn:hover { background: #5fffca; }
+
+/* ── SYNTHESIS ROW ── */
+.syn-row {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--b1);
+  display: flex;
+  background: var(--s1);
+  overflow: hidden;
+  min-height: 0;
+}
+.syn-side {
+  width: 168px; flex-shrink: 0;
+  padding: 12px 14px;
+  border-right: 1px solid var(--b1);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.syn-label {
+  font-size: 10px; color: var(--green); letter-spacing: 0.08em;
+  text-transform: uppercase; display: flex; align-items: center; gap: 6px;
+}
+.syn-actions { display: flex; flex-direction: column; gap: 6px; }
+
+.syn-body {
+  flex: 1; padding: 12px 16px; overflow-y: auto;
+  font-size: 11.5px; color: var(--tx2); line-height: 1.8;
+  scrollbar-width: thin; scrollbar-color: var(--b2) transparent;
+}
+.syn-body .sh { color: var(--green); font-weight: 600; }
+.syn-body .si { color: var(--orange); }
+.syn-body .sw { color: var(--yellow); }
+.syn-placeholder { color: var(--tx3); font-size: 11px; font-style: italic; }
+.thinking { display: flex; align-items: center; gap: 8px; color: var(--tx3); font-size: 11px; }
+.dots span {
+  display: inline-block; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--green); margin: 0 2px;
+  animation: bd 1.2s infinite;
+}
+.dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
+@keyframes bd{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--s3); border: 1px solid var(--b2); color: var(--tx);
+  font-family: var(--font-m); font-size: 12px;
+  padding: 9px 18px; border-radius: 20px;
+  opacity: 0; transition: all .25s; z-index: 999; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── STATS BAR ── */
+.stats-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 20px; height: 28px; flex-shrink: 0;
+  border-bottom: 1px solid var(--b0);
+  background: var(--bg);
+}
+.stat { font-size: 10px; color: var(--tx3); display: flex; align-items: center; gap: 5px; }
+.stat strong { color: var(--tx2); font-weight: 500; }
+.stat-sep { color: var(--b2); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 180px; }
+  .col-gh { grid-column: 1; }
+  .col-hn { grid-column: 2; }
+  .col-rd { grid-column: 1; }
+  .col-ph { grid-column: 2; }
+  .syn-row { grid-column: 1 / -1; }
+}
+@media (max-width: 580px) {
+  .grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 300px) 200px; }
+  body { overflow: auto; }
+  .syn-side { display: none; }
+}
+
+/* ── FADE IN ── */
+.fade-in { animation: fi .3s ease both; }
+@keyframes fi { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">OSS AI <em>Pulse</em></div>
+    <div class="filter-wrap" id="filterWrap">
+      <span class="filter-icon">⌕</span>
+      <input class="filter-input" id="filterInput" placeholder="Filter across all feeds… e.g. agent, gguf, mistral" oninput="handleFilter(this.value)" autocomplete="off" spellcheck="false">
+      <button class="filter-clear" id="filterClear" onclick="clearFilter()" title="Clear filter">✕</button>
+    </div>
+    <div class="topbar-actions">
+      <div class="live-pill"><div class="dot"></div>LIVE</div>
+      <button class="btn" onclick="refreshAll()" id="refreshBtn">↺ Refresh</button>
+      <button class="btn" onclick="copyDigest()" id="digestBtn">⎘ Copy digest</button>
+      <button class="btn primary" onclick="runSynthesis()" id="synBtn">▶ Synthesize</button>
+      <button class="theme-switch" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark theme" aria-label="Toggle theme">
+        <span class="ts-icon-sun">☀</span>
+        <span class="ts-icon-moon">☾</span>
+        <span class="ts-thumb" id="tsThumb">☾</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- QUICK FILTER TAGS -->
+  <div class="tag-row">
+    <span class="tag-label">QUICK FILTER:</span>
+    <button class="ftag" onclick="quickFilter(this,'llm')">LLM</button>
+    <button class="ftag" onclick="quickFilter(this,'agent')">Agents</button>
+    <button class="ftag" onclick="quickFilter(this,'ollama')">Ollama</button>
+    <button class="ftag" onclick="quickFilter(this,'rag')">RAG</button>
+    <button class="ftag" onclick="quickFilter(this,'fine-tun')">Fine-tuning</button>
+    <button class="ftag" onclick="quickFilter(this,'mistral')">Mistral</button>
+    <button class="ftag" onclick="quickFilter(this,'llama')">Llama</button>
+    <button class="ftag" onclick="quickFilter(this,'inference')">Inference</button>
+    <button class="ftag" onclick="quickFilter(this,'vibe cod')">Vibe coding</button>
+    <button class="ftag" onclick="quickFilter(this,'open source')">Open source</button>
+    <button class="ftag" onclick="quickFilter(this,'mozilla')">Mozilla</button>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-row">
+    <span class="stat"><strong id="stat-total">—</strong> items loaded</span>
+    <span class="stat-sep">·</span>
+    <span class="stat">GitHub <strong id="stat-gh">—</strong></span>
+    <span class="stat-sep">·</span>
+    <span class="stat">HN <strong id="stat-hn">—</strong></span>
+    <span class="stat-sep">·</span>
+    <span class="stat">Reddit <strong id="stat-rd">—</strong></span>
+    <span class="stat-sep">·</span>
+    <span class="stat">PH <strong id="stat-ph">—</strong></span>
+    <span class="stat-sep">·</span>
+    <span class="stat" id="stat-filter" style="display:none">Filter: <strong id="stat-filter-val">—</strong></span>
+    <span class="stat" id="stat-time" style="margin-left:auto;color:var(--tx3)">—</span>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+
+    <!-- GITHUB -->
+    <div class="col col-gh">
+      <div class="col-head">
+        <div class="col-head-top">
+          <div class="col-name"><span class="col-icon">⬡</span> GitHub</div>
+          <span class="badge" id="gh-badge">loading</span>
+        </div>
+        <div class="col-sub">Trending AI repos · star velocity · topics</div>
+      </div>
+      <div class="col-body" id="gh-body">
+        <div class="skel-wrap">
+          <div class="skel" style="height:70px"></div>
+          <div class="skel" style="height:70px"></div>
+          <div class="skel" style="height:70px"></div>
+          <div class="skel" style="height:55px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HACKER NEWS -->
+    <div class="col col-hn">
+      <div class="col-head">
+        <div class="col-head-top">
+          <div class="col-name"><span class="col-icon" style="color:var(--orange)">▲</span> Hacker News</div>
+          <span class="badge" id="hn-badge">loading</span>
+        </div>
+        <div class="col-sub">Top AI stories · Show HN · Ask HN</div>
+      </div>
+      <div class="col-body" id="hn-body">
+        <div class="skel-wrap">
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:45px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REDDIT -->
+    <div class="col col-rd">
+      <div class="col-head">
+        <div class="col-head-top">
+          <div class="col-name"><span class="col-icon" style="color:#ff5700">◈</span> Reddit</div>
+          <span class="badge" id="rd-badge">loading</span>
+        </div>
+        <div class="col-sub">r/LocalLLaMA · r/MachineLearning · r/artificial</div>
+      </div>
+      <div class="col-body" id="rd-body">
+        <div class="skel-wrap">
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:45px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT HUNT -->
+    <div class="col col-ph">
+      <div class="col-head">
+        <div class="col-head-top">
+          <div class="col-name"><span class="col-icon" style="color:var(--yellow)">◎</span> Product Hunt</div>
+          <span class="badge" id="ph-badge">loading</span>
+        </div>
+        <div class="col-sub">New AI launches · upvotes · maker activity</div>
+      </div>
+      <div class="col-body" id="ph-body">
+        <div class="skel-wrap">
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:60px"></div>
+          <div class="skel" style="height:45px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYNTHESIS -->
+    <div class="syn-row">
+      <div class="syn-side">
+        <div class="syn-label"><div class="dot"></div>Claude synthesis</div>
+        <div class="syn-actions">
+          <button class="btn primary" onclick="runSynthesis()" id="synBtnSide" style="font-size:11px;padding:5px 10px">▶ Run</button>
+          <button class="btn" onclick="copyDigest()" style="font-size:11px;padding:5px 10px">⎘ Copy</button>
+        </div>
+        <div style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:4px">Reads live feed data. Surfaces patterns, debates, momentum.</div>
+      </div>
+      <div class="syn-body" id="syn-body">
+        <span class="syn-placeholder">Load feeds → hit Synthesize. Claude reads the live data and tells you what's actually moving across the OSS AI ecosystem right now.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const LANG_COLORS = {
+  Python:'#3572A5',JavaScript:'#f1e05a',TypeScript:'#3178c6',
+  Rust:'#dea584',Go:'#00ADD8','C++':'#f34b7d',C:'#555',
+  Shell:'#89e051',Jupyter:'#DA5B0B',Swift:'#fa7343',Ruby:'#cc342d',
+  Kotlin:'#a97bff',Java:'#b07219'
+};
+
+const AI_KW = ['llm','llama','gpt','openai','anthropic','claude','mistral','gemma',
+  'gemini','ai ','ml ','machine learning','neural','transformer','diffusion',
+  'stable diffusion','ollama','gguf','ggml','quantiz','fine-tun','finetun',
+  'rag','retrieval','agent','langchain','hugging','inference','embedding',
+  'vector db','whisper','tts','lora','qlora','vllm','triton','cuda','pytorch',
+  'tensorflow','jax','mlops','local model','open source ai','foundation model',
+  'multimodal','vision model','text-to','image generation','speech','copilot',
+  'autocomplete','code generation','deep learning','generative','gpt-','llm-',
+  'ai-','ml-','show hn: ai','show hn: llm','ask hn: ai','ask hn: llm',
+  'mozilla ai','sovereign ai','on-device','edge ai'];
+
+function isAI(t) {
+  if (!t) return false;
+  const s = t.toLowerCase();
+  return AI_KW.some(k => s.includes(k));
+}
+
+let currentFilter = '';
+let allData = { gh: [], hn: [], rd: [], ph: [] };
+let loadedAt = null;
+
+// ── FILTER ──────────────────────────────────────────────────────────────────
+function handleFilter(val) {
+  currentFilter = val.toLowerCase().trim();
+  document.getElementById('filterClear').classList.toggle('visible', !!val);
+  document.querySelectorAll('.ftag').forEach(t => t.classList.remove('active'));
+  applyFilter();
+  updateStatBar();
+}
+
+function clearFilter() {
+  currentFilter = '';
+  document.getElementById('filterInput').value = '';
+  document.getElementById('filterClear').classList.remove('visible');
+  document.querySelectorAll('.ftag').forEach(t => t.classList.remove('active'));
+  applyFilter();
+  updateStatBar();
+}
+
+function quickFilter(el, kw) {
+  const wasActive = el.classList.contains('active');
+  document.querySelectorAll('.ftag').forEach(t => t.classList.remove('active'));
+  if (wasActive) {
+    clearFilter(); return;
+  }
+  el.classList.add('active');
+  currentFilter = kw;
+  document.getElementById('filterInput').value = kw;
+  document.getElementById('filterClear').classList.add('visible');
+  applyFilter();
+  updateStatBar();
+}
+
+function applyFilter() {
+  document.querySelectorAll('.item').forEach(el => {
+    if (!currentFilter) { el.classList.remove('hidden'); return; }
+    const text = (el.dataset.search || '').toLowerCase();
+    el.classList.toggle('hidden', !text.includes(currentFilter));
+  });
+  updateVisibleCounts();
+}
+
+function updateVisibleCounts() {
+  ['gh','hn','rd','ph'].forEach(src => {
+    const all = document.querySelectorAll(`#${src}-body .item`);
+    const vis = [...all].filter(el => !el.classList.contains('hidden')).length;
+    const badge = document.getElementById(`${src}-badge`);
+    if (badge && all.length > 0) badge.textContent = currentFilter ? `${vis}/${all.length}` : all.length;
+  });
+}
+
+function updateStatBar() {
+  const gh = document.querySelectorAll('#gh-body .item:not(.hidden)').length;
+  const hn = document.querySelectorAll('#hn-body .item:not(.hidden)').length;
+  const rd = document.querySelectorAll('#rd-body .item:not(.hidden)').length;
+  const ph = document.querySelectorAll('#ph-body .item:not(.hidden)').length;
+  document.getElementById('stat-gh').textContent = gh;
+  document.getElementById('stat-hn').textContent = hn;
+  document.getElementById('stat-rd').textContent = rd;
+  document.getElementById('stat-ph').textContent = ph;
+  document.getElementById('stat-total').textContent = gh+hn+rd+ph;
+  const fEl = document.getElementById('stat-filter');
+  if (currentFilter) {
+    fEl.style.display = '';
+    document.getElementById('stat-filter-val').textContent = `"${currentFilter}"`;
+  } else {
+    fEl.style.display = 'none';
+  }
+  if (loadedAt) {
+    document.getElementById('stat-time').textContent = 'Updated ' + loadedAt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+// ── SPARKLINE ───────────────────────────────────────────────────────────────
+function sparklineSVG(points, color) {
+  if (!points || points.length < 2) return '';
+  const w = 80, h = 18;
+  const max = Math.max(...points), min = Math.min(...points);
+  const range = max - min || 1;
+  const xs = points.map((_,i) => (i/(points.length-1))*w);
+  const ys = points.map(p => h - ((p-min)/range)*(h-3) - 1.5);
+  const d = xs.map((x,i) => `${i===0?'M':'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <polyline points="${xs.map((x,i)=>x.toFixed(1)+','+ys[i].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+    <circle cx="${xs[xs.length-1]}" cy="${ys[ys.length-1]}" r="2" fill="${color}" opacity=".9"/>
+  </svg>`;
+}
+
+function starVelocityPoints(stars) {
+  // Estimate rough growth curve based on total stars
+  const base = Math.max(stars * 0.3, 10);
+  return Array.from({length:8}, (_,i) => {
+    const t = i / 7;
+    return Math.round(base + (stars - base) * Math.pow(t, 1.4) + (Math.random()-0.5)*base*0.12);
+  });
+}
+
+// ── GITHUB ──────────────────────────────────────────────────────────────────
+async function loadGitHub() {
+  const body = document.getElementById('gh-body');
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch('https://api.github.com/search/repositories?q=topic:llm+stars:>50&sort=updated&order=desc&per_page=10',
+        {headers:{Accept:'application/vnd.github.v3+json'}}).then(r=>r.json()),
+      fetch('https://api.github.com/search/repositories?q=llm+OR+ollama+OR+rag+OR+llama+language:python+stars:>200&sort=stars&order=desc&per_page=10',
+        {headers:{Accept:'application/vnd.github.v3+json'}}).then(r=>r.json())
+    ]);
+
+    const seen = new Set(); const repos = [];
+    for (const item of [...(r1.items||[]), ...(r2.items||[])]) {
+      if (!seen.has(item.id) && repos.length < 14) { seen.add(item.id); repos.push(item); }
+    }
+
+    allData.gh = repos;
+    document.getElementById('gh-badge').textContent = repos.length;
+
+    body.innerHTML = repos.map((r, i) => {
+      const lc = LANG_COLORS[r.language] || '#4d5c6a';
+      const stars = r.stargazers_count >= 1000 ? (r.stargazers_count/1000).toFixed(1)+'k' : r.stargazers_count;
+      const updated = new Date(r.updated_at);
+      const daysAgo = Math.floor((Date.now()-updated)/86400000);
+      const when = daysAgo===0?'today':daysAgo===1?'1d ago':daysAgo+'d ago';
+      const spark = sparklineSVG(starVelocityPoints(r.stargazers_count), '#ffd166');
+      const topics = (r.topics||[]).slice(0,3);
+      const searchText = [r.full_name, r.description||'', ...topics].join(' ');
+      return `<div class="item fade-in" data-search="${esc(searchText.toLowerCase())}" style="animation-delay:${i*40}ms">
+        <div class="item-head">
+          <span class="item-rank">${i+1}</span>
+          <div class="item-title"><a href="${r.html_url}" target="_blank" rel="noopener">${esc(r.full_name)}</a></div>
+        </div>
+        ${r.description ? `<div class="item-desc">${esc(r.description)}</div>` : ''}
+        <div class="item-meta">
+          <span class="chip g">★ ${stars}</span>
+          ${r.language ? `<span class="chip"><span class="ldot" style="background:${lc}"></span>${r.language}</span>` : ''}
+          <span class="chip">${when}</span>
+          ${r.forks_count > 50 ? `<span class="chip b">⑂ ${r.forks_count >= 1000?(r.forks_count/1000).toFixed(1)+'k':r.forks_count}</span>` : ''}
+          ${topics.map(t => `<span class="pill green">${esc(t)}</span>`).join('')}
+        </div>
+        ${r.stargazers_count > 100 ? `<div class="sparkline-wrap"><div class="sparkline-label">star trajectory</div>${spark}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    applyFilter(); updateStatBar();
+  } catch(e) {
+    body.innerHTML = `<div class="err-bar">GitHub API error: ${esc(e.message)}<br>May be rate-limited. Refresh in 60s.</div>`;
+    document.getElementById('gh-badge').textContent = 'error';
+  }
+}
+
+// ── HACKER NEWS ─────────────────────────────────────────────────────────────
+async function loadHN() {
+  const body = document.getElementById('hn-body');
+  try {
+    const [topIds, newIds, bestIds] = await Promise.all([
+      fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(r=>r.json()),
+      fetch('https://hacker-news.firebaseio.com/v0/newstories.json').then(r=>r.json()),
+      fetch('https://hacker-news.firebaseio.com/v0/beststories.json').then(r=>r.json())
+    ]);
+
+    const candidates = [...new Set([...topIds.slice(0,60), ...bestIds.slice(0,30), ...newIds.slice(0,20)])];
+    const stories = await Promise.all(
+      candidates.slice(0,80).map(id =>
+        fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r=>r.json()).catch(()=>null)
+      )
+    );
+
+    const filtered = stories
+      .filter(s => s && s.title && isAI(s.title + ' ' + (s.url||'')))
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 14);
+
+    allData.hn = filtered;
+    document.getElementById('hn-badge').textContent = filtered.length || '0';
+
+    if (!filtered.length) {
+      body.innerHTML = `<div class="feed-msg"><div class="feed-msg-icon">▲</div><div class="feed-msg-title">No AI stories right now</div><div class="feed-msg-sub">HN top feed has no AI items at this moment. Try refreshing shortly.</div></div>`;
+      return;
+    }
+
+    body.innerHTML = filtered.map((s, i) => {
+      const url = s.url || `https://news.ycombinator.com/item?id=${s.id}`;
+      let domain = '';
+      try { domain = new URL(url).hostname.replace('www.',''); } catch(e) {}
+      const isShow = s.title.startsWith('Show HN');
+      const isAsk = s.title.startsWith('Ask HN');
+      const hoursAgo = Math.floor((Date.now()/1000 - s.time)/3600);
+      const when = hoursAgo<1?'just now':hoursAgo===1?'1h ago':hoursAgo<24?hoursAgo+'h ago':Math.floor(hoursAgo/24)+'d ago';
+      const searchText = s.title + ' ' + domain;
+      return `<div class="item fade-in" data-search="${esc(searchText.toLowerCase())}" style="animation-delay:${i*40}ms">
+        <div class="item-head">
+          <span class="item-rank">${i+1}</span>
+          <div class="item-title">
+            ${isShow?'<span class="pill orange" style="margin-right:4px">Show</span>':''}
+            ${isAsk?'<span class="pill green" style="margin-right:4px">Ask</span>':''}
+            <a href="${url}" target="_blank" rel="noopener">${esc(s.title)}</a>
+          </div>
+        </div>
+        <div class="item-meta">
+          <span class="chip s">▲ ${s.score}</span>
+          <span class="chip">${s.descendants||0} comments</span>
+          <span class="chip">${when}</span>
+          ${domain ? `<span class="chip" style="color:var(--tx3)">${esc(domain)}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    applyFilter(); updateStatBar();
+  } catch(e) {
+    body.innerHTML = `<div class="err-bar">HN error: ${esc(e.message)}</div>`;
+    document.getElementById('hn-badge').textContent = 'error';
+  }
+}
+
+// ── REDDIT ──────────────────────────────────────────────────────────────────
+async function loadReddit() {
+  const body = document.getElementById('rd-body');
+  const subs = ['LocalLLaMA','MachineLearning','artificial','singularity'];
+  const results = [];
+
+  for (const sub of subs) {
+    try {
+      const r = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=12&raw_json=1`);
+      if (!r.ok) continue;
+      const data = await r.json();
+      const posts = (data?.data?.children||[]).map(c=>({...c.data, _sub: sub}));
+      results.push(...posts);
+    } catch(e) { /* silent fallback */ }
+  }
+
+  const sorted = results
+    .filter(p => p.title && !p.stickied && p.score > 5)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 15);
+
+  if (!sorted.length) {
+    body.innerHTML = `<div class="feed-msg">
+      <div class="feed-msg-icon">◈</div>
+      <div class="feed-msg-title">Reddit CORS blocked</div>
+      <div class="feed-msg-sub">Your browser is blocking Reddit's public API. Try opening this file in Firefox, or visit <a href="https://reddit.com/r/LocalLLaMA" target="_blank">r/LocalLLaMA</a> directly.</div>
+    </div>`;
+    document.getElementById('rd-badge').textContent = 'blocked';
+    return;
+  }
+
+  allData.rd = sorted;
+  document.getElementById('rd-badge').textContent = sorted.length;
+
+  body.innerHTML = sorted.map((p, i) => {
+    const hoursAgo = Math.floor((Date.now()/1000 - p.created_utc)/3600);
+    const when = hoursAgo<1?'just now':hoursAgo<24?hoursAgo+'h ago':Math.floor(hoursAgo/24)+'d ago';
+    const up = p.score >= 1000 ? (p.score/1000).toFixed(1)+'k' : p.score;
+    const flair = p.link_flair_text;
+    const sub = p.subreddit || p._sub;
+    const searchText = p.title + ' ' + (flair||'') + ' ' + sub;
+    return `<div class="item fade-in" data-search="${esc(searchText.toLowerCase())}" style="animation-delay:${i*40}ms">
+      <div class="item-head">
+        <span class="item-rank">${i+1}</span>
+        <div class="item-title"><a href="https://reddit.com${p.permalink}" target="_blank" rel="noopener">${esc(p.title)}</a></div>
+      </div>
+      <div class="item-meta">
+        <span class="chip u">▲ ${up}</span>
+        <span class="chip">${p.num_comments} comments</span>
+        <span class="chip">${when}</span>
+        <span class="chip" style="color:#ff5700">r/${sub}</span>
+        ${flair ? `<span class="pill">${esc(flair)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  applyFilter(); updateStatBar();
+}
+
+// ── PRODUCT HUNT ────────────────────────────────────────────────────────────
+async function loadProductHunt() {
+  const body = document.getElementById('ph-body');
+  const key = localStorage.getItem('ph_token');
+
+  if (!key) {
+    body.innerHTML = renderPHConnect();
+    document.getElementById('ph-badge').textContent = 'connect';
+    return;
+  }
+
+  const query = `{ posts(order: VOTES, topic: "artificial-intelligence", first: 14) { edges { node {
+    id name tagline votesCount commentsCount url createdAt
+    topics { edges { node { name } } }
+  }}}}`;
+
+  try {
+    const r = await fetch('https://api.producthunt.com/v2/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({ query })
+    });
+    const data = await r.json();
+    const posts = data?.data?.posts?.edges?.map(e=>e.node) || [];
+    if (!posts.length) throw new Error('No posts returned — check your API key');
+
+    allData.ph = posts;
+    document.getElementById('ph-badge').textContent = posts.length;
+
+    body.innerHTML = posts.map((p, i) => {
+      const topics = (p.topics?.edges||[]).slice(0,2).map(e=>e.node.name);
+      const searchText = p.name + ' ' + p.tagline + ' ' + topics.join(' ');
+      return `<div class="item fade-in" data-search="${esc(searchText.toLowerCase())}" style="animation-delay:${i*40}ms">
+        <div class="item-head">
+          <span class="item-rank">${i+1}</span>
+          <div class="item-title"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a></div>
+        </div>
+        <div class="item-desc">${esc(p.tagline)}</div>
+        <div class="item-meta">
+          <span class="chip v">▲ ${p.votesCount}</span>
+          <span class="chip">${p.commentsCount} comments</span>
+          ${topics.map(t=>`<span class="pill">${esc(t)}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    applyFilter(); updateStatBar();
+  } catch(e) {
+    body.innerHTML = renderPHConnect('Error: ' + e.message);
+    document.getElementById('ph-badge').textContent = 'error';
+  }
+}
+
+function renderPHConnect(err) {
+  return `<div class="connect-card">
+    <h4>Connect Product Hunt</h4>
+    ${err ? `<p style="color:var(--red);margin-bottom:8px;font-size:11px">${esc(err)}</p>` : ''}
+    <p>Paste your free PH developer token to see live AI launches. Free, no billing.<br>
+    <a href="https://www.producthunt.com/v2/oauth/applications" target="_blank">Get token → producthunt.com/v2/oauth/applications</a></p>
+    <div class="key-row">
+      <input class="key-inp" id="ph-inp" placeholder="Paste API token…" />
+      <button class="key-btn" onclick="savePHKey()">Connect</button>
+    </div>
+  </div>`;
+}
+
+function savePHKey() {
+  const v = document.getElementById('ph-inp')?.value.trim();
+  if (v) { localStorage.setItem('ph_token', v); loadProductHunt(); }
+}
+
+// ── SYNTHESIS ────────────────────────────────────────────────────────────────
+async function runSynthesis() {
+  const synBody = document.getElementById('syn-body');
+  const btn = document.getElementById('synBtn');
+  const btnSide = document.getElementById('synBtnSide');
+  [btn, btnSide].forEach(b => { if(b){b.disabled=true; b.textContent='...';} });
+
+  synBody.innerHTML = `<div class="thinking"><div class="dots"><span></span><span></span><span></span></div><span>Reading live feeds and synthesizing…</span></div>`;
+
+  const pick = (src, n) => [...document.querySelectorAll(`#${src}-body .item:not(.hidden)`)].slice(0,n).map(el => {
+    const title = el.querySelector('.item-title')?.textContent?.trim().replace(/\s+/g,' ');
+    const chips = [...el.querySelectorAll('.chip')].map(c=>c.textContent.trim()).join(' ');
+    return `• ${title} [${chips}]`;
+  }).join('\n');
+
+  const ghData = pick('gh', 6);
+  const hnData = pick('hn', 6);
+  const rdData = pick('rd', 6);
+  const phData = pick('ph', 6);
+  const filterCtx = currentFilter ? `\nActive filter: "${currentFilter}"` : '';
+
+  const prompt = `You are an open source AI community intelligence analyst deeply embedded in the builder ecosystem — GitHub, HN, r/LocalLLaMA, Product Hunt, Discord.
+
+Here is live data pulled right now from four platforms:${filterCtx}
+
+GITHUB TRENDING:
+${ghData || '(no data)'}
+
+HACKER NEWS AI STORIES:
+${hnData || '(no data)'}
+
+REDDIT (r/LocalLLaMA, r/MachineLearning, r/artificial):
+${rdData || '(no data)'}
+
+PRODUCT HUNT AI LAUNCHES:
+${phData || '(no data)'}
+
+Write a sharp community intelligence brief. Exactly this format, no deviations:
+
+**SIGNAL** — single sentence: the one dominant theme or shift happening across platforms right now
+**MOVING** — 3 bullet points: specific tools/repos/posts gaining traction and the concrete reason why
+**DEBATE** — what the community is actively arguing about or wrestling with, be specific
+**WATCH** — one under-the-radar thing that hasn't exploded yet but has the signals of momentum
+
+Rules: name actual projects. Be opinionated. No fluff. Total length: 8-10 lines max.`;
+
+  try {
+    // Calls the Netlify serverless proxy — API key stays server-side
+    const r = await fetch('/.netlify/functions/synthesize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        max_tokens: 600,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await r.json();
+    const text = data.content?.[0]?.text || 'No synthesis returned.';
+
+    synBody.innerHTML = text
+      .replace(/\*\*SIGNAL\*\*/g, '<span class="sh">// SIGNAL</span>')
+      .replace(/\*\*MOVING\*\*/g, '<span class="sh">// MOVING</span>')
+      .replace(/\*\*DEBATE\*\*/g, '<span class="sh">// DEBATE</span>')
+      .replace(/\*\*WATCH\*\*/g, '<span class="sw">// WATCH</span>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--tx)">$1</strong>')
+      .replace(/`([^`]+)`/g, '<code style="background:var(--s3);padding:1px 5px;border-radius:3px;color:var(--blue)">$1</code>')
+      .replace(/\n/g, '<br>');
+  } catch(e) {
+    synBody.innerHTML = `<span style="color:var(--red)">Synthesis error: ${esc(e.message)}</span>`;
+  }
+
+  [btn, btnSide].forEach(b => { if(b){b.disabled=false; b.textContent=b.id==='synBtn'?'▶ Synthesize':'▶ Run';} });
+}
+
+// ── COPY DIGEST ──────────────────────────────────────────────────────────────
+async function copyDigest() {
+  const now = new Date();
+  let lines = [`OSS AI PULSE — Daily Digest\n${now.toDateString()} ${now.toLocaleTimeString()}\n${'─'.repeat(50)}\n`];
+
+  const sources = [
+    {id:'gh', name:'GITHUB TRENDING'},
+    {id:'hn', name:'HACKER NEWS'},
+    {id:'rd', name:'REDDIT'},
+    {id:'ph', name:'PRODUCT HUNT'}
+  ];
+
+  for (const {id, name} of sources) {
+    const items = [...document.querySelectorAll(`#${id}-body .item:not(.hidden)`)].slice(0,5);
+    if (!items.length) continue;
+    lines.push(`\n## ${name}`);
+    items.forEach((el, i) => {
+      const title = el.querySelector('.item-title')?.textContent?.trim().replace(/\s+/g,' ');
+      const chips = [...el.querySelectorAll('.chip')].slice(0,3).map(c=>c.textContent.trim()).join(' · ');
+      const link = el.querySelector('a')?.href || '';
+      lines.push(`${i+1}. ${title}\n   ${chips}\n   ${link}`);
+    });
+  }
+
+  const synText = document.getElementById('syn-body')?.innerText?.trim();
+  if (synText && !synText.includes('Load feeds')) {
+    lines.push(`\n${'─'.repeat(50)}\nCLAUDE SYNTHESIS\n${synText}`);
+  }
+
+  if (currentFilter) lines.push(`\n[Filtered by: "${currentFilter}"]`);
+  lines.push(`\nGenerated by OSS AI Pulse`);
+
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    showToast('Digest copied to clipboard');
+  } catch(e) {
+    showToast('Copy failed — try in a modern browser');
+  }
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function setSkelLoading(id) {
+  document.getElementById(id).innerHTML = `<div class="skel-wrap">
+    <div class="skel" style="height:70px"></div>
+    <div class="skel" style="height:60px"></div>
+    <div class="skel" style="height:60px"></div>
+    <div class="skel" style="height:50px"></div>
+  </div>`;
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '↺ Loading…'; btn.disabled = true;
+  ['gh-body','hn-body','rd-body'].forEach(setSkelLoading);
+  if (!localStorage.getItem('ph_token')) {
+    document.getElementById('ph-body').innerHTML = renderPHConnect();
+  } else {
+    setSkelLoading('ph-body');
+  }
+  ['gh','hn','rd','ph'].forEach(s => document.getElementById(`${s}-badge`).textContent = '…');
+  allData = { gh:[], hn:[], rd:[], ph:[] };
+  loadedAt = new Date();
+  await Promise.allSettled([loadGitHub(), loadHN(), loadReddit(), loadProductHunt()]);
+  btn.textContent = '↺ Refresh'; btn.disabled = false;
+  updateStatBar();
+}
+
+// ── THEME ────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem('pulse_theme', next);
+}
+
+function applyTheme(theme) {
+  const html = document.documentElement;
+  const thumb = document.getElementById('tsThumb');
+  if (theme === 'light') {
+    html.setAttribute('data-theme', 'light');
+    if (thumb) thumb.textContent = '☀';
+  } else {
+    html.removeAttribute('data-theme');
+    if (thumb) thumb.textContent = '☾';
+  }
+}
+
+// ── BOOT ────────────────────────────────────────────────────────────────────
+loadedAt = new Date();
+applyTheme(localStorage.getItem('pulse_theme') || 'dark');
+Promise.allSettled([loadGitHub(), loadHN(), loadReddit(), loadProductHunt()]).then(updateStatBar);
+</script>
+</body>
+</html>
