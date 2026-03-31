@@ -4,10 +4,9 @@ exports.handler = async function (event) {
     return { statusCode: 503, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'PH_TOKEN not configured' }) };
   }
 
-  // Broader query: no topic filter, just top posts today sorted by votes
-  // Also try fetching today's posts specifically
+  // Fetch recent posts sorted by newest, no topic filter
   const query = `{
-    posts(order: VOTES, first: 20, postedAfter: "${getDateDaysAgo(30)}") {
+    posts(order: NEWEST, first: 20) {
       edges {
         node {
           id name tagline votesCount commentsCount url createdAt
@@ -30,9 +29,9 @@ exports.handler = async function (event) {
 
     const data = await r.json();
 
-    if (data.errors) {
-      // Fallback: simpler query without date filter
-      const fallbackQuery = `{
+    if (data.errors || !data?.data?.posts?.edges?.length) {
+      // Fallback: top voted AI posts
+      const fallback = `{
         posts(order: VOTES, topic: "artificial-intelligence", first: 20) {
           edges {
             node {
@@ -45,14 +44,10 @@ exports.handler = async function (event) {
       const r2 = await fetch('https://api.producthunt.com/v2/api/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({ query: fallbackQuery }),
+        body: JSON.stringify({ query: fallback }),
       });
       const data2 = await r2.json();
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify(data2),
-      };
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(data2) };
     }
 
     return {
@@ -64,9 +59,3 @@ exports.handler = async function (event) {
     return { statusCode: 500, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: err.message }) };
   }
 };
-
-function getDateDaysAgo(days) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}

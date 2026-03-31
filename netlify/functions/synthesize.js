@@ -1,11 +1,7 @@
 exports.handler = async function (event) {
-  // Only allow POST
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
-
-  // Basic rate-limiting header check (optional but good practice)
-  const origin = event.headers.origin || '';
 
   try {
     const body = JSON.parse(event.body);
@@ -23,7 +19,7 @@ exports.handler = async function (event) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens,
         messages,
       }),
