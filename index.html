@@ -268,13 +268,15 @@ svg.spark{display:block;overflow:visible}
 .key-btn{background:var(--accent);color:#0a1020;border:none;font-family:var(--font-m);font-size:11px;font-weight:600;padding:6px 14px;border-radius:var(--r);cursor:pointer}
 [data-theme="light"] .key-btn{color:#f0f4fa}
 
-/* 2-TIER LAYOUT */
+/* 3-COLUMN SWITCHER LAYOUT */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.tier{display:grid;overflow:hidden;min-height:0}
-.tier-top{grid-template-columns:repeat(3,1fr);flex:1.65;border-bottom:2px solid var(--b2)}
-.tier-bottom{grid-template-columns:repeat(3,1fr);flex:1}
-.tier-label{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:4px 14px 3px;background:var(--bg);border-bottom:1px solid var(--b1);font-size:9px;color:var(--tx3);letter-spacing:.09em;text-transform:uppercase;flex-shrink:0}
-.tier-label-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.feed-grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden;min-height:0}
+.col-switcher{display:flex;align-items:center;gap:5px;margin-left:auto}
+.sw-pill{font-family:var(--font-m);font-size:9px;padding:2px 8px;border-radius:20px;border:1px solid var(--b2);background:none;color:var(--tx3);cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1.4}
+.sw-pill:hover{border-color:var(--b3);color:var(--tx2)}
+.sw-pill.active{background:var(--acc2);border-color:var(--accent);color:var(--accent);font-weight:500}
+.col-pane{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+.col-pane.visible{display:flex}
 
 /* SYNTHESIS */
 .syn-row{border-top:1px solid var(--b1);display:flex;background:var(--s1);flex-shrink:0;height:158px;overflow:hidden}
@@ -382,6 +384,14 @@ footer{border-top:1px solid var(--b1);background:var(--s1);padding:7px 18px;disp
   <button class="ftag" onclick="quickFilter(this,'arxiv')">arxiv</button>
 </div>
 
+<!-- hidden badge anchors for syncColBadge -->
+<span id="gh-badge" style="display:none">—</span>
+<span id="hn-badge" style="display:none">—</span>
+<span id="rd-badge" style="display:none">—</span>
+<span id="hf-badge" style="display:none">—</span>
+<span id="ax-badge" style="display:none">—</span>
+<span id="ph-badge" style="display:none">—</span>
+
 <div class="stats-row">
   <span class="stat"><strong id="stat-total">—</strong> items</span>
   <span class="sep">·</span>
@@ -402,63 +412,65 @@ footer{border-top:1px solid var(--b1);background:var(--s1);padding:7px 18px;disp
 </div>
 
 <div class="main">
+  <div class="feed-grid">
 
-  <!-- TIER 1: High-frequency community signal -->
-  <div class="tier tier-top">
-    <div class="tier-label">
-      <span class="tier-label-dot" style="background:var(--accent)"></span>
-      Community signal — GitHub · Hacker News · Reddit
-    </div>
-    <div class="col src-gh" id="col-gh">
+    <!-- COL 1: GitHub (default) / Hugging Face -->
+    <div class="col" id="col-1">
       <div class="col-head">
-        <div class="col-head-top"><div class="col-name"><span class="col-icon">⬡</span> GitHub</div><span class="badge" id="gh-badge">loading</span></div>
-        <div class="col-sub">Trending AI repos · star velocity · topics</div>
+        <div class="col-head-top">
+          <div class="col-name" id="col1-name"><span class="col-icon">⬡</span> <span id="col1-title">GitHub</span></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="badge" id="col1-badge">—</span>
+            <div class="col-switcher">
+              <button class="sw-pill active" id="sw1-gh" onclick="switchCol(1,'gh')">GitHub</button>
+              <button class="sw-pill" id="sw1-hf" onclick="switchCol(1,'hf')">HuggingFace</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-sub" id="col1-sub">Trending AI repos · star velocity · topics</div>
       </div>
-      <div class="col-body" id="gh-body"><div class="skel-wrap"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div></div></div>
+      <div class="col-pane visible" id="gh-body"><div class="skel-wrap"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div></div></div>
+      <div class="col-pane" id="hf-body"><div class="skel-wrap"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div></div></div>
     </div>
-    <div class="col src-hn" id="col-hn">
-      <div class="col-head">
-        <div class="col-head-top"><div class="col-name"><span class="col-icon" style="color:var(--orange)">▲</span> Hacker News</div><span class="badge" id="hn-badge">loading</span></div>
-        <div class="col-sub">Top AI stories · Show HN · Ask HN</div>
-      </div>
-      <div class="col-body" id="hn-body"><div class="skel-wrap"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div><div class="skel" style="height:55px"></div></div></div>
-    </div>
-    <div class="col src-rd" id="col-rd">
-      <div class="col-head">
-        <div class="col-head-top"><div class="col-name"><span class="col-icon" style="color:#ff6030">◈</span> Reddit</div><span class="badge" id="rd-badge">loading</span></div>
-        <div class="col-sub">r/LocalLLaMA · r/MachineLearning · r/ollama · r/LanguageModelHackers</div>
-      </div>
-      <div class="col-body" id="rd-body"><div class="skel-wrap"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div><div class="skel" style="height:55px"></div></div></div>
-    </div>
-  </div>
 
-  <!-- TIER 2: Research & launches -->
-  <div class="tier tier-bottom">
-    <div class="tier-label">
-      <span class="tier-label-dot" style="background:var(--purple)"></span>
-      Research & launches — Hugging Face · arxiv · Product Hunt
-    </div>
-    <div class="col src-hf" id="col-hf">
+    <!-- COL 2: HN (default) / arxiv -->
+    <div class="col" id="col-2">
       <div class="col-head">
-        <div class="col-head-top"><div class="col-name"><span class="col-icon" style="color:var(--hf)">◉</span> Hugging Face</div><span class="badge" id="hf-badge">loading</span></div>
-        <div class="col-sub">Trending models · Spaces · datasets</div>
+        <div class="col-head-top">
+          <div class="col-name" id="col2-name"><span class="col-icon" style="color:var(--orange)">▲</span> <span id="col2-title">Hacker News</span></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="badge" id="col2-badge">—</span>
+            <div class="col-switcher">
+              <button class="sw-pill active" id="sw2-hn" onclick="switchCol(2,'hn')">HN</button>
+              <button class="sw-pill" id="sw2-ax" onclick="switchCol(2,'ax')">arxiv</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-sub" id="col2-sub">Top AI stories · Show HN · Ask HN</div>
       </div>
-      <div class="col-body" id="hf-body"><div class="skel-wrap"><div class="skel" style="height:55px"></div><div class="skel" style="height:55px"></div><div class="skel" style="height:48px"></div></div></div>
+      <div class="col-pane visible" id="hn-body"><div class="skel-wrap"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div><div class="skel" style="height:55px"></div></div></div>
+      <div class="col-pane" id="ax-body"><div class="skel-wrap"><div class="skel" style="height:70px"></div><div class="skel" style="height:70px"></div><div class="skel" style="height:60px"></div></div></div>
     </div>
-    <div class="col src-ax" id="col-ax">
+
+    <!-- COL 3: Reddit (default) / Product Hunt -->
+    <div class="col" id="col-3">
       <div class="col-head">
-        <div class="col-head-top"><div class="col-name"><span class="col-icon" style="color:var(--arxiv)">◫</span> arxiv</div><span class="badge" id="ax-badge">loading</span></div>
-        <div class="col-sub">cs.AI · cs.LG · cs.CL recent papers</div>
+        <div class="col-head-top">
+          <div class="col-name" id="col3-name"><span class="col-icon" style="color:#ff6030">◈</span> <span id="col3-title">Reddit</span></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="badge" id="col3-badge">—</span>
+            <div class="col-switcher">
+              <button class="sw-pill active" id="sw3-rd" onclick="switchCol(3,'rd')">Reddit</button>
+              <button class="sw-pill" id="sw3-ph" onclick="switchCol(3,'ph')">Product Hunt</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-sub" id="col3-sub">r/LocalLLaMA · r/MachineLearning · r/ollama · r/LanguageModelHackers</div>
       </div>
-      <div class="col-body" id="ax-body"><div class="skel-wrap"><div class="skel" style="height:65px"></div><div class="skel" style="height:65px"></div><div class="skel" style="height:52px"></div></div></div>
+      <div class="col-pane visible" id="rd-body"><div class="skel-wrap"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div><div class="skel" style="height:55px"></div></div></div>
+      <div class="col-pane" id="ph-body"><div class="skel-wrap"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div></div></div>
     </div>
-    <div class="col src-ph" id="col-ph">
-      <div class="col-head">
-        <div class="col-head-top"><div class="col-name"><span class="col-icon" style="color:var(--amber)">◎</span> Product Hunt</div><span class="badge" id="ph-badge">loading</span></div>
-        <div class="col-sub">New AI launches · upvotes · maker activity</div>
-      </div>
-      <div class="col-body" id="ph-body"><div class="skel-wrap"><div class="skel" style="height:55px"></div><div class="skel" style="height:55px"></div><div class="skel" style="height:48px"></div></div></div>
-    </div>
+
   </div>
 
   <!-- SYNTHESIS -->
@@ -548,12 +560,64 @@ function isAI(t){if(!t)return false;const s=t.toLowerCase();return AI_KW.some(k=
 
 let currentFilter='',loadedAt=null;
 
+// ── COLUMN SWITCHER
+const COL_SOURCES = {
+  1: ['gh','hf'], 2: ['hn','ax'], 3: ['rd','ph']
+};
+const COL_META = {
+  gh: {title:'GitHub', icon:'⬡', iconStyle:'', sub:'Trending AI repos · star velocity · topics'},
+  hf: {title:'Hugging Face', icon:'◉', iconStyle:'color:var(--hf)', sub:'Trending models · downloads · tags'},
+  hn: {title:'Hacker News', icon:'▲', iconStyle:'color:var(--orange)', sub:'Top AI stories · Show HN · Ask HN'},
+  ax: {title:'arxiv', icon:'◫', iconStyle:'color:var(--arxiv)', sub:'cs.AI · cs.LG · cs.CL recent papers'},
+  rd: {title:'Reddit', icon:'◈', iconStyle:'color:#ff6030', sub:'r/LocalLLaMA · r/MachineLearning · r/ollama · r/LanguageModelHackers'},
+  ph: {title:'Product Hunt', icon:'◎', iconStyle:'color:var(--amber)', sub:'New AI launches · upvotes · maker activity'},
+};
+const colActive = {1:'gh', 2:'hn', 3:'rd'};
+
+function switchCol(col, src) {
+  const sources = COL_SOURCES[col];
+  const meta = COL_META[src];
+  colActive[col] = src;
+
+  // Update header
+  const nameEl = document.getElementById(`col${col}-name`);
+  const iconStyle = meta.iconStyle ? ` style="${meta.iconStyle}"` : '';
+  nameEl.innerHTML = `<span class="col-icon"${iconStyle}>${meta.icon}</span> <span id="col${col}-title">${meta.title}</span>`;
+  document.getElementById(`col${col}-sub`).textContent = meta.sub;
+
+  // Show/hide panes
+  sources.forEach(s => {
+    const pane = document.getElementById(`${s}-body`);
+    if (pane) pane.classList.toggle('visible', s === src);
+  });
+
+  // Update switcher pills
+  sources.forEach(s => {
+    const pill = document.getElementById(`sw${col}-${s}`);
+    if (pill) pill.classList.toggle('active', s === src);
+  });
+
+  // Sync badge
+  syncColBadge(col, src);
+  updateStatBar();
+}
+
+function syncColBadge(col, src) {
+  const items = document.querySelectorAll(`#${src}-body .item:not(.hidden)`).length;
+  const badge = document.getElementById(`col${col}-badge`);
+  if (badge) badge.textContent = items || document.getElementById(`${src}-badge`)?.textContent || '—';
+}
+
+function syncAllBadges() {
+  [1,2,3].forEach(col => syncColBadge(col, colActive[col]));
+}
+
 // ── FILTER
 function handleFilter(val){currentFilter=val.toLowerCase().trim();document.getElementById('filterClear').classList.toggle('vis',!!val);document.querySelectorAll('.ftag').forEach(t=>t.classList.remove('active'));applyFilter();updateStatBar()}
 function clearFilter(){currentFilter='';document.getElementById('filterInput').value='';document.getElementById('filterClear').classList.remove('vis');document.querySelectorAll('.ftag').forEach(t=>t.classList.remove('active'));applyFilter();updateStatBar()}
 function quickFilter(el,kw){const was=el.classList.contains('active');document.querySelectorAll('.ftag').forEach(t=>t.classList.remove('active'));if(was){clearFilter();return}el.classList.add('active');currentFilter=kw;document.getElementById('filterInput').value=kw;document.getElementById('filterClear').classList.add('vis');applyFilter();updateStatBar()}
-function applyFilter(){document.querySelectorAll('.item').forEach(el=>{if(!currentFilter){el.classList.remove('hidden');return}el.classList.toggle('hidden',!(el.dataset.search||'').toLowerCase().includes(currentFilter))});}
-function updateStatBar(){['gh','hn','rd','hf','ax','ph'].forEach(s=>document.getElementById('stat-'+s).textContent=document.querySelectorAll(`#${s}-body .item:not(.hidden)`).length);const tot=['gh','hn','rd','hf','ax','ph'].reduce((a,s)=>a+document.querySelectorAll(`#${s}-body .item:not(.hidden)`).length,0);document.getElementById('stat-total').textContent=tot;const hf=!!currentFilter;document.getElementById('stat-filter').style.display=hf?'':'none';document.getElementById('fsep').style.display=hf?'':'none';if(hf)document.getElementById('stat-filter-val').textContent=`"${currentFilter}"`;if(loadedAt)document.getElementById('stat-time').textContent='Updated '+loadedAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function applyFilter(){document.querySelectorAll('.item').forEach(el=>{if(!currentFilter){el.classList.remove('hidden');return}el.classList.toggle('hidden',!(el.dataset.search||'').toLowerCase().includes(currentFilter))});syncAllBadges();}
+function updateStatBar(){['gh','hn','rd','hf','ax','ph'].forEach(s=>document.getElementById('stat-'+s).textContent=document.querySelectorAll(`#${s}-body .item:not(.hidden)`).length);syncAllBadges();const tot=['gh','hn','rd','hf','ax','ph'].reduce((a,s)=>a+document.querySelectorAll(`#${s}-body .item:not(.hidden)`).length,0);document.getElementById('stat-total').textContent=tot;const hf=!!currentFilter;document.getElementById('stat-filter').style.display=hf?'':'none';document.getElementById('fsep').style.display=hf?'':'none';if(hf)document.getElementById('stat-filter-val').textContent=`"${currentFilter}"`;if(loadedAt)document.getElementById('stat-time').textContent='Updated '+loadedAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 
 // ── SPARKLINE
 function sparkSVG(pts,color){if(!pts||pts.length<2)return'';const w=80,h=16,mx=Math.max(...pts),mn=Math.min(...pts),rng=mx-mn||1;const xs=pts.map((_,i)=>(i/(pts.length-1))*w),ys=pts.map(p=>h-((p-mn)/rng)*(h-3)-1.5);return`<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${xs.map((x,i)=>x.toFixed(1)+','+ys[i].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/><circle cx="${xs[xs.length-1]}" cy="${ys[ys.length-1]}" r="2" fill="${color}"/></svg>`}
@@ -839,7 +903,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAbout()});
 // ── UTILS
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
-function setSkel(id){document.getElementById(id).innerHTML=`<div class="skel-wrap"><div class="skel" style="height:70px"></div><div class="skel" style="height:65px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div></div>`}
+function setSkel(id){const el=document.getElementById(id);if(el)el.innerHTML=`<div class="skel-wrap"><div class="skel" style="height:70px"></div><div class="skel" style="height:65px"></div><div class="skel" style="height:60px"></div><div class="skel" style="height:55px"></div></div>`}
 
 async function refreshAll(){
   const btn=document.getElementById('refreshBtn');btn.textContent='↺ Loading…';btn.disabled=true;
@@ -852,7 +916,7 @@ async function refreshAll(){
 // ── BOOT
 applyTheme(localStorage.getItem('pulse_theme')||'dark');
 loadedAt=new Date();
-Promise.allSettled([loadGitHub(),loadHN(),loadReddit(),loadHuggingFace(),loadArxiv(),loadProductHunt()]).then(updateStatBar);
+Promise.allSettled([loadGitHub(),loadHN(),loadReddit(),loadHuggingFace(),loadArxiv(),loadProductHunt()]).then(()=>{updateStatBar();syncAllBadges();});
 </script>
 </body>
 </html>
