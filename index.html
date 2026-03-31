@@ -662,7 +662,7 @@ async function loadReddit(){
 async function loadHuggingFace(){
   const body=document.getElementById('hf-body');
   try{
-    const r=await fetch('https://huggingface.co/api/models?sort=trending&limit=20&direction=-1');
+    const r=await fetch('/.netlify/functions/huggingface');
     if(!r.ok)throw new Error('HF API '+r.status);
     const models=await r.json();
     document.getElementById('hf-badge').textContent=models.length;
@@ -690,7 +690,7 @@ async function loadHuggingFace(){
 async function loadArxiv(){
   const body=document.getElementById('ax-body');
   try{
-    const r=await fetch('https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=15');
+    const r=await fetch('/.netlify/functions/arxiv');
     if(!r.ok)throw new Error('arxiv '+r.status);
     const xml=new DOMParser().parseFromString(await r.text(),'application/xml');
     const entries=[...xml.querySelectorAll('entry')];
