@@ -7,4 +7,4 @@ Live open source AI intelligence dashboard tracking GitHub, Hacker News, Reddit,
 
 ---
 
-Built with plain HTML/CSS/JS · Powered by Claude · No framework, no build step
+Built with plain HTML/CSS/JS · Powered by Claude · No framework, no build step. Open-source.
